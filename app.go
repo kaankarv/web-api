@@ -3,25 +3,32 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+
 	"log"
 	"net/http"
 
 	"github.com/gorilla/mux"
-	// "github.com/jinzhu/gorm"
+	"github.com/jinzhu/gorm"
+	_ "github.com/jinzhu/gorm/dialects/sqlite"
+	// "gorm.io/gorm"
+	// "github.com/micro/go-log"
 )
 
 type App struct {
 	Router *mux.Router
-	// DB     *gorm.DB
+	DB     *gorm.DB
 }
 
 func (a *App) Initialize() {
+
+	a.DB, _ = gorm.Open("sqlite3", "test.db")
+	a.DB.AutoMigrate(&Todo{})
 
 	a.Router = mux.NewRouter()
 	a.Router.HandleFunc("/", a.Home).Methods("GET")
 	a.Router.HandleFunc("/todos", a.Todos).Methods("GET")
 	a.Router.HandleFunc("/todos", a.TodoCreate).Methods("POST")
-	a.Router.HandleFunc("/todos/{id}", a.Todo).Methods("GET")
+	a.Router.HandleFunc("/todos/{id}", a.Todo).Methods("PUT")
 }
 
 func (a *App) Run(addr string) {
@@ -53,7 +60,9 @@ func (a *App) TodoCreate(w http.ResponseWriter, r *http.Request) {
 		respondWithError(w, http.StatusOK, " :((( ")
 
 	}
-	// respondWithJSON(w, http.StatusOK, todos)
+	a.DB.Create(&todo)
+
+	respondWithJSON(w, http.StatusOK, todo)
 
 }
 func (a *App) Todo(w http.ResponseWriter, r *http.Request) {
