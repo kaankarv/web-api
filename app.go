@@ -18,9 +18,10 @@ type App struct {
 func (a *App) Initialize() {
 
 	a.Router = mux.NewRouter()
-	a.Router.HandleFunc("/", a.Home)
-	a.Router.HandleFunc("/todos", a.Todos)
-	a.Router.HandleFunc("/todos/{id}", a.Todo)
+	a.Router.HandleFunc("/", a.Home).Methods("GET")
+	a.Router.HandleFunc("/todos", a.Todos).Methods("GET")
+	a.Router.HandleFunc("/todos", a.TodoCreate).Methods("POST")
+	a.Router.HandleFunc("/todos/{id}", a.Todo).Methods("GET")
 }
 
 func (a *App) Run(addr string) {
@@ -45,11 +46,23 @@ func (a *App) Todos(w http.ResponseWriter, r *http.Request) {
 	respondWithJSON(w, http.StatusOK, todos)
 
 }
+func (a *App) TodoCreate(w http.ResponseWriter, r *http.Request) {
+	var todo Todo
+	decoder := json.NewDecoder(r.Body)
+	if err := decoder.Decode(&todo); err != nil {
+		respondWithError(w, http.StatusOK, " :((( ")
+
+	}
+	// respondWithJSON(w, http.StatusOK, todos)
+
+}
 func (a *App) Todo(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
 	fmt.Fprintf(w, "todo page %s", vars["id"])
 }
+
+// ---------------------------------------------------------------------------
 
 func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
 
@@ -57,5 +70,9 @@ func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
 	w.Write(response)
+
+}
+func respondWithError(w http.ResponseWriter, code int, message string) {
+	respondWithJSON(w, code, map[string]string{"error": message})
 
 }
